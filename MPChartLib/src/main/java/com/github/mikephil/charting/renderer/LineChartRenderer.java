@@ -94,11 +94,12 @@ public class LineChartRenderer extends LineRadarRenderer {
         drawBitmap.eraseColor(Color.TRANSPARENT);
 
         LineData lineData = mChart.getLineData();
+        if(lineData!=null) {
+            for (ILineDataSet set : lineData.getDataSets()) {
 
-        for (ILineDataSet set : lineData.getDataSets()) {
-
-            if (set.isVisible())
-                drawDataSet(c, set);
+                if (set.isVisible())
+                    drawDataSet(c, set);
+            }
         }
 
         c.drawBitmap(drawBitmap, 0, 0, mRenderPaint);
