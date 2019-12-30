@@ -93,17 +93,23 @@ public class LineChartRenderer extends LineRadarRenderer {
         }
 
         drawBitmap.eraseColor(Color.TRANSPARENT);
+        if (mChart != null) {
+            LineData lineData = new LineData();
+            try {
+                lineData = mChart.getLineData();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (lineData != null) {
+                for (ILineDataSet set : lineData.getDataSets()) {
 
-        LineData lineData = mChart.getLineData();
-        if(lineData!=null) {
-            for (ILineDataSet set : lineData.getDataSets()) {
-
-                if (set.isVisible())
-                    drawDataSet(c, set);
+                    if (set.isVisible())
+                        drawDataSet(c, set);
+                }
             }
         }
-
         c.drawBitmap(drawBitmap, 0, 0, mRenderPaint);
+
     }
 
     protected void drawDataSet(Canvas c, ILineDataSet dataSet) {
@@ -523,71 +529,76 @@ public class LineChartRenderer extends LineRadarRenderer {
 
     @Override
     public void drawValues(Canvas c) {
-
-        if (isDrawingValuesAllowed(mChart)) {
-
-            List<ILineDataSet> dataSets = mChart.getLineData().getDataSets();
-
-            for (int i = 0; i < dataSets.size(); i++) {
-
-                ILineDataSet dataSet = dataSets.get(i);
-
-                if (!shouldDrawValues(dataSet) || dataSet.getEntryCount() < 1)
-                    continue;
-
-                // apply the text-styling defined by the DataSet
-                applyValueTextStyle(dataSet);
-
-                Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
-
-                // make sure the values do not interfear with the circles
-                int valOffset = (int) (dataSet.getCircleRadius() * 1.75f);
-
-                if (!dataSet.isDrawCirclesEnabled())
-                    valOffset = valOffset / 2;
-
-                mXBounds.set(mChart, dataSet);
-
-                float[] positions = trans.generateTransformedValuesLine(dataSet, mAnimator.getPhaseX(), mAnimator
-                        .getPhaseY(), mXBounds.min, mXBounds.max);
-                ValueFormatter formatter = dataSet.getValueFormatter();
-
-                MPPointF iconsOffset = MPPointF.getInstance(dataSet.getIconsOffset());
-                iconsOffset.x = Utils.convertDpToPixel(iconsOffset.x);
-                iconsOffset.y = Utils.convertDpToPixel(iconsOffset.y);
-
-                for (int j = 0; j < positions.length; j += 2) {
-
-                    float x = positions[j];
-                    float y = positions[j + 1];
-
-                    if (!mViewPortHandler.isInBoundsRight(x))
-                        break;
-
-                    if (!mViewPortHandler.isInBoundsLeft(x) || !mViewPortHandler.isInBoundsY(y))
-                        continue;
-
-                    Entry entry = dataSet.getEntryForIndex(j / 2 + mXBounds.min);
-
-                    if (dataSet.isDrawValuesEnabled()) {
-                        drawValue(c, formatter.getPointLabel(entry), x, y - valOffset, dataSet.getValueTextColor(j / 2));
-                    }
-
-                    if (entry.getIcon() != null && dataSet.isDrawIconsEnabled()) {
-
-                        Drawable icon = entry.getIcon();
-
-                        Utils.drawImage(
-                                c,
-                                icon,
-                                (int)(x + iconsOffset.x),
-                                (int)(y + iconsOffset.y),
-                                icon.getIntrinsicWidth(),
-                                icon.getIntrinsicHeight());
-                    }
+        if (mChart != null) {
+            if (isDrawingValuesAllowed(mChart)) {
+                List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+                try {
+                    dataSets = mChart.getLineData().getDataSets();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
-                MPPointF.recycleInstance(iconsOffset);
+                for (int i = 0; i < dataSets.size(); i++) {
+
+                    ILineDataSet dataSet = dataSets.get(i);
+
+                    if (!shouldDrawValues(dataSet) || dataSet.getEntryCount() < 1)
+                        continue;
+
+                    // apply the text-styling defined by the DataSet
+                    applyValueTextStyle(dataSet);
+
+                    Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
+
+                    // make sure the values do not interfear with the circles
+                    int valOffset = (int) (dataSet.getCircleRadius() * 1.75f);
+
+                    if (!dataSet.isDrawCirclesEnabled())
+                        valOffset = valOffset / 2;
+
+                    mXBounds.set(mChart, dataSet);
+
+                    float[] positions = trans.generateTransformedValuesLine(dataSet, mAnimator.getPhaseX(), mAnimator
+                            .getPhaseY(), mXBounds.min, mXBounds.max);
+                    ValueFormatter formatter = dataSet.getValueFormatter();
+
+                    MPPointF iconsOffset = MPPointF.getInstance(dataSet.getIconsOffset());
+                    iconsOffset.x = Utils.convertDpToPixel(iconsOffset.x);
+                    iconsOffset.y = Utils.convertDpToPixel(iconsOffset.y);
+
+                    for (int j = 0; j < positions.length; j += 2) {
+
+                        float x = positions[j];
+                        float y = positions[j + 1];
+
+                        if (!mViewPortHandler.isInBoundsRight(x))
+                            break;
+
+                        if (!mViewPortHandler.isInBoundsLeft(x) || !mViewPortHandler.isInBoundsY(y))
+                            continue;
+
+                        Entry entry = dataSet.getEntryForIndex(j / 2 + mXBounds.min);
+
+                        if (dataSet.isDrawValuesEnabled()) {
+                            drawValue(c, formatter.getPointLabel(entry), x, y - valOffset, dataSet.getValueTextColor(j / 2));
+                        }
+
+                        if (entry.getIcon() != null && dataSet.isDrawIconsEnabled()) {
+
+                            Drawable icon = entry.getIcon();
+
+                            Utils.drawImage(
+                                    c,
+                                    icon,
+                                    (int)(x + iconsOffset.x),
+                                    (int)(y + iconsOffset.y),
+                                    icon.getIntrinsicWidth(),
+                                    icon.getIntrinsicHeight());
+                        }
+                    }
+
+                    MPPointF.recycleInstance(iconsOffset);
+                }
             }
         }
     }
@@ -698,28 +709,35 @@ public class LineChartRenderer extends LineRadarRenderer {
 
     @Override
     public void drawHighlighted(Canvas c, Highlight[] indices) {
+        if (mChart != null) {
+            LineData lineData = new LineData();
+            try {
+                lineData = mChart.getLineData();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        LineData lineData = mChart.getLineData();
+            for (Highlight high : indices) {
 
-        for (Highlight high : indices) {
+                ;
+                ILineDataSet set = lineData.getDataSetByIndex(high.getDataSetIndex());
 
-            ILineDataSet set = lineData.getDataSetByIndex(high.getDataSetIndex());
+                if (set == null || !set.isHighlightEnabled())
+                    continue;
 
-            if (set == null || !set.isHighlightEnabled())
-                continue;
+                Entry e = set.getEntryForXValue(high.getX(), high.getY());
 
-            Entry e = set.getEntryForXValue(high.getX(), high.getY());
+                if (!isInBoundsX(e, set))
+                    continue;
 
-            if (!isInBoundsX(e, set))
-                continue;
+                MPPointD pix = mChart.getTransformer(set.getAxisDependency()).getPixelForValues(e.getX(), e.getY() * mAnimator
+                        .getPhaseY());
 
-            MPPointD pix = mChart.getTransformer(set.getAxisDependency()).getPixelForValues(e.getX(), e.getY() * mAnimator
-                    .getPhaseY());
+                high.setDraw((float) pix.x, (float) pix.y);
 
-            high.setDraw((float) pix.x, (float) pix.y);
-
-            // draw the lines
-            drawHighlightLines(c, (float) pix.x, (float) pix.y, set);
+                // draw the lines
+                drawHighlightLines(c, (float) pix.x, (float) pix.y, set);
+            }
         }
     }
 
