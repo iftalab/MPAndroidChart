@@ -627,7 +627,7 @@ public class LineChartRenderer extends LineRadarRenderer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            
+
             for (int i = 0; i < dataSets.size(); i++) {
 
                 ILineDataSet dataSet = dataSets.get(i);
