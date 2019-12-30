@@ -25,6 +25,7 @@ import com.github.mikephil.charting.utils.Utils;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -613,78 +614,83 @@ public class LineChartRenderer extends LineRadarRenderer {
     private float[] mCirclesBuffer = new float[2];
 
     protected void drawCircles(Canvas c) {
+        if (mChart != null) {
+            mRenderPaint.setStyle(Paint.Style.FILL);
 
-        mRenderPaint.setStyle(Paint.Style.FILL);
+            float phaseY = mAnimator.getPhaseY();
 
-        float phaseY = mAnimator.getPhaseY();
-
-        mCirclesBuffer[0] = 0;
-        mCirclesBuffer[1] = 0;
-
-        List<ILineDataSet> dataSets = mChart.getLineData().getDataSets();
-
-        for (int i = 0; i < dataSets.size(); i++) {
-
-            ILineDataSet dataSet = dataSets.get(i);
-
-            if (!dataSet.isVisible() || !dataSet.isDrawCirclesEnabled() ||
-                    dataSet.getEntryCount() == 0)
-                continue;
-
-            mCirclePaintInner.setColor(dataSet.getCircleHoleColor());
-
-            Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
-
-            mXBounds.set(mChart, dataSet);
-
-            float circleRadius = dataSet.getCircleRadius();
-            float circleHoleRadius = dataSet.getCircleHoleRadius();
-            boolean drawCircleHole = dataSet.isDrawCircleHoleEnabled() &&
-                    circleHoleRadius < circleRadius &&
-                    circleHoleRadius > 0.f;
-            boolean drawTransparentCircleHole = drawCircleHole &&
-                    dataSet.getCircleHoleColor() == ColorTemplate.COLOR_NONE;
-
-            DataSetImageCache imageCache;
-
-            if (mImageCaches.containsKey(dataSet)) {
-                imageCache = mImageCaches.get(dataSet);
-            } else {
-                imageCache = new DataSetImageCache();
-                mImageCaches.put(dataSet, imageCache);
+            mCirclesBuffer[0] = 0;
+            mCirclesBuffer[1] = 0;
+            List<ILineDataSet> dataSets = new ArrayList<>();
+            try {
+                dataSets = mChart.getLineData().getDataSets();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            
+            for (int i = 0; i < dataSets.size(); i++) {
 
-            boolean changeRequired = imageCache.init(dataSet);
+                ILineDataSet dataSet = dataSets.get(i);
 
-            // only fill the cache with new bitmaps if a change is required
-            if (changeRequired) {
-                imageCache.fill(dataSet, drawCircleHole, drawTransparentCircleHole);
-            }
-
-            int boundsRangeCount = mXBounds.range + mXBounds.min;
-
-            for (int j = mXBounds.min; j <= boundsRangeCount; j++) {
-
-                Entry e = dataSet.getEntryForIndex(j);
-
-                if (e == null) break;
-
-                mCirclesBuffer[0] = e.getX();
-                mCirclesBuffer[1] = e.getY() * phaseY;
-
-                trans.pointValuesToPixel(mCirclesBuffer);
-
-                if (!mViewPortHandler.isInBoundsRight(mCirclesBuffer[0]))
-                    break;
-
-                if (!mViewPortHandler.isInBoundsLeft(mCirclesBuffer[0]) ||
-                        !mViewPortHandler.isInBoundsY(mCirclesBuffer[1]))
+                if (!dataSet.isVisible() || !dataSet.isDrawCirclesEnabled() ||
+                        dataSet.getEntryCount() == 0)
                     continue;
 
-                Bitmap circleBitmap = imageCache.getBitmap(j);
+                mCirclePaintInner.setColor(dataSet.getCircleHoleColor());
 
-                if (circleBitmap != null) {
-                    c.drawBitmap(circleBitmap, mCirclesBuffer[0] - circleRadius, mCirclesBuffer[1] - circleRadius, null);
+                Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
+
+                mXBounds.set(mChart, dataSet);
+
+                float circleRadius = dataSet.getCircleRadius();
+                float circleHoleRadius = dataSet.getCircleHoleRadius();
+                boolean drawCircleHole = dataSet.isDrawCircleHoleEnabled() &&
+                        circleHoleRadius < circleRadius &&
+                        circleHoleRadius > 0.f;
+                boolean drawTransparentCircleHole = drawCircleHole &&
+                        dataSet.getCircleHoleColor() == ColorTemplate.COLOR_NONE;
+
+                DataSetImageCache imageCache;
+
+                if (mImageCaches.containsKey(dataSet)) {
+                    imageCache = mImageCaches.get(dataSet);
+                } else {
+                    imageCache = new DataSetImageCache();
+                    mImageCaches.put(dataSet, imageCache);
+                }
+
+                boolean changeRequired = imageCache.init(dataSet);
+
+                // only fill the cache with new bitmaps if a change is required
+                if (changeRequired) {
+                    imageCache.fill(dataSet, drawCircleHole, drawTransparentCircleHole);
+                }
+
+                int boundsRangeCount = mXBounds.range + mXBounds.min;
+
+                for (int j = mXBounds.min; j <= boundsRangeCount; j++) {
+
+                    Entry e = dataSet.getEntryForIndex(j);
+
+                    if (e == null) break;
+
+                    mCirclesBuffer[0] = e.getX();
+                    mCirclesBuffer[1] = e.getY() * phaseY;
+
+                    trans.pointValuesToPixel(mCirclesBuffer);
+
+                    if (!mViewPortHandler.isInBoundsRight(mCirclesBuffer[0]))
+                        break;
+
+                    if (!mViewPortHandler.isInBoundsLeft(mCirclesBuffer[0]) ||
+                            !mViewPortHandler.isInBoundsY(mCirclesBuffer[1]))
+                        continue;
+
+                    Bitmap circleBitmap = imageCache.getBitmap(j);
+
+                    if (circleBitmap != null) {
+                        c.drawBitmap(circleBitmap, mCirclesBuffer[0] - circleRadius, mCirclesBuffer[1] - circleRadius, null);
+                    }
                 }
             }
         }
